@@ -1,0 +1,58 @@
+Sure! Below is an example of how you can perform CRUD operations on the User entity using Postman:
+
+Create (POST) User:
+
+Endpoint: POST /api/users/register
+Request Body (JSON):
+json
+Copy code
+{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "role": "USER"
+}
+Description: Creates a new user with the provided details.
+Read (GET) User by Username:
+
+Endpoint: GET /api/users/{username}
+Description: Retrieves user information by username.
+Read (GET) Users by Role:
+
+Endpoint: GET /api/users/role/{role}
+Description: Retrieves a list of users with the specified role.
+Update (PUT) User:
+
+Endpoint: PUT /api/users/{user_id}
+Request Body (JSON):
+json
+Copy code
+{
+    "username": "john_doe_updated",
+    "email": "john_updated@example.com",
+    "role": "ADMIN"
+}
+Description: Updates user information with the provided details.
+Delete (DELETE) User:
+
+Endpoint: DELETE /api/users/{user_id}
+Description: Deletes the user with the specified user ID.
+To generate dummy data for testing, you can use the following JSON objects as examples:
+
+json
+Copy code
+{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "role": "USER"
+}
+json
+Copy code
+{
+    "username": "jane_smith",
+    "email": "jane@example.com",
+    "password": "password456",
+    "role": "ADMIN"
+}
+These examples represent the structure of the User entity and can be used as sample data when testing CRUD operations in Postman. Adjust the data according to your actual requirements and the structure of your User entity and database table.

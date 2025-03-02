@@ -1,0 +1,18 @@
+create account -> sign in -> 
+	TASK_ASIGNEE -> project details and tasks assigned to it (task status change only)
+	ADMIN -> projects, task , task asignee (project related updatation)
+	PROJECT_MANAGER -> (task related updatations)
+		all projects and related task and task asignee
+
+
+1. DONE:- deadline is getting accept as last year it should be future date.
+2. Project related task query
+3. task and users related to it query
+4. Admin :- homepage should show ongoing project and ongoing project managers only
+5. Admin :- after clicking projects project filteration should be given for completed or ongoing project
+
+ADMIN :- 
+UI :- Projects , Project managers
+
+Queries;
+homepage: only ongoing projects should be visible format using date
