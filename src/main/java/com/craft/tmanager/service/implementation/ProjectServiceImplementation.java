@@ -2,6 +2,8 @@ package com.craft.tmanager.service.implementation;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +25,10 @@ public class ProjectServiceImplementation implements ProjectServiceDefinition{
     private UserRepository userRepository;
     
     public List<ProjectDTO> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
-        return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
+        return projectRepository.findAll()
+            .stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
     }
 
     public ProjectDTO createProject(ProjectDTO projectDTO) {
@@ -36,19 +40,23 @@ public class ProjectServiceImplementation implements ProjectServiceDefinition{
         Project createdProject = projectRepository.save(project);
         
         // Convert created Project entity back to ProjectDTO
-        return convertToDTO(createdProject);
+        return Optional.of(projectRepository.save(project))
+                        .map(this::convertToDTO)
+                        .orElseThrow(() -> new RuntimeException("Project creation failed"));
     }
 
     public ProjectDTO getProjectById(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectNotFoundException(projectId));
-        return convertToDTO(project);
+        return projectRepository.findById(projectId)
+                                .map(this::convertToDTO)
+                                .orElseThrow(() -> new ProjectNotFoundException(projectId));
     }
     
     @Override
 	public List<ProjectDTO> getProjectsByManagerId(Long managerId) {
-    	List<Project> projects = projectRepository.findByManagerId(userRepository.getById(managerId));
-    	return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
+    	return projectRepository.findByManagerId(userRepository.getById(managerId))
+    	    .stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
 	}
 
     public ProjectDTO updateProject(Long projectId, ProjectDTO projectDTO) {
@@ -60,9 +68,11 @@ public class ProjectServiceImplementation implements ProjectServiceDefinition{
         Project updatedProject = projectRepository.save(project);
         
         // Convert updated Project entity back to ProjectDTO
-        return convertToDTO(updatedProject);
+        return Optional.of(projectRepository.save(project))
+                        .map(this::convertToDTO)
+                        .orElseThrow(() -> new RuntimeException("Project update failed"));
     }
-
+    
     public void deleteProject(Long projectId) {
         projectRepository.deleteById(projectId);
     }

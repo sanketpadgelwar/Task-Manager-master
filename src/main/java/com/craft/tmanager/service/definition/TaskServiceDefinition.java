@@ -19,7 +19,7 @@ public interface TaskServiceDefinition {
 	public void deleteTask(Long taskId);
 	public List<UserDTO> getEmployeesByProject(Long projectId);
 	public List<TaskDTO> getLastUpdatedTasks();
-	
+	public List<TaskDTO> getTasksByEmployee(Long employeeId);
 	
 	
 }
