@@ -29,11 +29,11 @@ public class TaskController {
     private TaskServiceDefinition taskService;
 
 
-	 @GetMapping
-	    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-	        List<TaskDTO> tasks = taskService.getAllTasks();
-	        return ResponseEntity.ok(tasks);
-	    }
+	@GetMapping
+	public ResponseEntity<List<TaskDTO>> getAllTasks() {
+	    List<TaskDTO> tasks = taskService.getAllTasks();
+	    return ResponseEntity.ok(tasks);
+	}
 	 
     @PostMapping("/create")
     public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) throws InvalidTaskDeadlineException {
@@ -75,6 +75,12 @@ public class TaskController {
     @GetMapping("/last-activities")
     public List<TaskDTO> getLastUpdatedTasks() {
         return taskService.getLastUpdatedTasks();
+    }
+
+    @GetMapping("/tasks/employeeId/{employeeId}")
+    public ResponseEntity<List<TaskDTO>> getTasksByEmployeeId(@PathVariable Long employeeId) {
+        List<TaskDTO> tasks = taskService.getTasksByEmployee(employeeId);
+        return ResponseEntity.ok(tasks);
     }
     // Add more endpoints as needed
 }

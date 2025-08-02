@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,12 +13,15 @@ import org.springframework.stereotype.Service;
 import com.craft.tmanager.dto.TaskDTO;
 import com.craft.tmanager.dto.UserDTO;
 import com.craft.tmanager.entity.Task;
+import com.craft.tmanager.entity.User;
 import com.craft.tmanager.exception.InvalidTaskDeadlineException;
 import com.craft.tmanager.exception.TaskNotFoundException;
+import com.craft.tmanager.exception.UserNotFoundException;
 import com.craft.tmanager.repository.ProjectRepository;
 import com.craft.tmanager.repository.TaskRepository;
 import com.craft.tmanager.repository.UserRepository;
 import com.craft.tmanager.service.definition.TaskServiceDefinition;
+import com.craft.tmanager.service.implementation.UserServiceImplementation;;
 
 @Service
 public class TaskServiceImplementation implements TaskServiceDefinition{
@@ -31,18 +35,21 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
     private UserRepository userRepository;
 
 	public List<TaskDTO> getTasksByProject(Long projectId){
-		List<Task> tasks = taskRepository.findByProjectId(projectRepository.findById(projectId));
-        return tasks.stream().map(this::convertToDTO).collect(Collectors.toList());
+        return taskRepository.findByProjectId(projectRepository.findById(projectId))
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
     
     public List<TaskDTO> getAllTasks() {
-        List<Task> tasks = taskRepository.findAll();
-        System.out.println(tasks);
-        return tasks.stream().map(this::convertToDTO).collect(Collectors.toList());
+        return taskRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
     
     public TaskDTO createTask(TaskDTO taskDTO) throws InvalidTaskDeadlineException {
-//    	System.out.println(taskDTO);
+
     	 LocalDate currentDateTime = LocalDate.now();
          if (!taskDTO.getDeadline().isAfter(currentDateTime)) {
              throw new InvalidTaskDeadlineException("Deadline must be a future date");
@@ -52,11 +59,9 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
         Task task = convertToEntity(taskDTO);
         task.setLastUpdatedOn(LocalDateTime.now());
         
-        // Add logic to validate task data and perform creation
-        Task createdTask = taskRepository.save(task);
-        
-        // Convert created Task entity back to TaskDTO
-        return convertToDTO(createdTask);
+        return Optional.of(taskRepository.save(task))
+                        .map(this::convertToDTO)
+                        .orElseThrow(() -> new RuntimeException("Task creation failed"));
     }
 
     public TaskDTO getTaskById(Long taskId) {
@@ -74,24 +79,46 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
         Task task = convertToEntity(taskDTO);
         task.setTaskId(taskId);
         
-        // Add logic to update task information
-        Task updatedTask = taskRepository.save(task);
-        
-        // Convert updated Task entity back to TaskDTO
-        return convertToDTO(updatedTask);
+        return Optional.of(taskRepository.save(task))
+                        .map(this::convertToDTO)
+                        .orElseThrow(() -> new RuntimeException("Task update failed"));
     }
 
     public void deleteTask(Long taskId) {
-        taskRepository.deleteById(taskId);
+       taskRepository.findById(taskId)
+                        .ifPresentOrElse(task -> taskRepository.deleteById(taskId), () -> {throw new TaskNotFoundException(taskId);}
+                        );
     }
     
     public List<TaskDTO> getLastUpdatedTasks() {
-        
-        List<Task> tasks = taskRepository.findAllOrderByLastUpdatedOnDesc();
-        return tasks.stream().map(this::convertToDTO).collect(Collectors.toList());
+        return taskRepository.findAllOrderByLastUpdatedOnDesc()
+                             .stream()
+                             .map(this::convertToDTO)
+                             .collect(Collectors.toList());
     }
     
- // Helper method to convert TaskDTO to Task entity
+ 
+	@Override
+	public List<UserDTO> getEmployeesByProject(Long projectId) {
+        return taskRepository.findByProjectId(projectRepository.findById(projectId))
+                .stream()
+                .map(Task::getAssignedUserId)
+                .distinct()
+                .map(new UserServiceImplementation()::convertToDTO)
+                .collect(Collectors.toList());
+	}
+
+    public List<TaskDTO> getTasksByEmployee(Long employeeId) {
+        Optional<User> user = userRepository.findById(employeeId);
+        if(user == null) throw new UserNotFoundException("Employee with id "+employeeId+" not found");
+        return taskRepository.findByAssignedUserId(user.get())
+        .stream()
+        .map(this::convertToDTO)
+        .collect(Collectors.toList());
+    }
+
+
+// Helper method to convert TaskDTO to Task entity
     private Task convertToEntity(TaskDTO taskDTO) {
         Task task = new Task();
         task.setTaskName(taskDTO.getTaskName());
@@ -120,26 +147,7 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
         return taskDTO;
     }
 
-	@Override
-	public List<UserDTO> getEmployeesByProject(Long projectId) {
-		List<Task> tasks = taskRepository.findByProjectId(projectRepository.findById(projectId));
-		UserServiceImplementation us = new UserServiceImplementation();
-		System.out.println(tasks);
-		List<UserDTO> users = new ArrayList<>();
-		for(Task task : tasks) {
-			UserDTO user = us.convertToDTO(task.getAssignedUserId());
-			if(users.contains(user)) {
-				continue;
-			}else {
-				users.add(user);
-			}
-			//userRepository.findById(task.getAssignedUserId().)
-		}
-		System.out.println(users);
-		return users;
-	}
-
-    // Add more methods as needed
+    
     
     
 }
