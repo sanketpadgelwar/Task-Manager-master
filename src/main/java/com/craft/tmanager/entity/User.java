@@ -1,9 +1,6 @@
 package com.craft.tmanager.entity;
 
-import java.util.Set;
-
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

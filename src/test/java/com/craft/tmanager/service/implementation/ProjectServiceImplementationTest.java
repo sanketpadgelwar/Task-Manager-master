@@ -81,7 +81,7 @@ public class ProjectServiceImplementationTest {
     @Test
     public void createProject_ShouldCreateAndReturnProject() {
         when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(userRepository.getById(any(Long.class))).thenReturn(manager);
+        when(userRepository.findById(any(Long.class)).get()).thenReturn(manager);
 
         ProjectDTO createdProject = projectService.createProject(projectDTO);
 
@@ -111,7 +111,7 @@ public class ProjectServiceImplementationTest {
 
     @Test
     public void getProjectsByManagerId_ShouldReturnProjectsByManagerId() {
-        when(userRepository.getById(any(Long.class))).thenReturn(manager);
+        when(userRepository.findById(any(Long.class)).get()).thenReturn(manager);
         when(projectRepository.findByManagerId(any(User.class))).thenReturn(Arrays.asList(project));
 
         List<ProjectDTO> projectsByManager = projectService.getProjectsByManagerId(1L);
@@ -123,7 +123,7 @@ public class ProjectServiceImplementationTest {
     @Test
     public void updateProject_ShouldUpdateAndReturnProject() {
         when(projectRepository.save(any(Project.class))).thenReturn(project);
-        when(userRepository.getById(any(Long.class))).thenReturn(manager);
+        when(userRepository.findById(any(Long.class)).get()).thenReturn(manager);
 
         ProjectDTO updatedProject = projectService.updateProject(1L, projectDTO);
 

@@ -7,12 +7,10 @@ import com.craft.tmanager.entity.Task;
 import com.craft.tmanager.entity.TaskPriority;
 import com.craft.tmanager.entity.TaskStatus;
 import com.craft.tmanager.entity.User;
-import com.craft.tmanager.exception.InvalidTaskDeadlineException;
-import com.craft.tmanager.exception.TaskNotFoundException;
 import com.craft.tmanager.repository.ProjectRepository;
 import com.craft.tmanager.repository.TaskRepository;
 import com.craft.tmanager.repository.UserRepository;
-import com.craft.tmanager.service.definition.TaskServiceDefinition;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,9 +23,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 

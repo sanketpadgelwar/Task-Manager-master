@@ -2,7 +2,6 @@ package com.craft.tmanager.service.implementation;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Optional;
@@ -21,7 +20,6 @@ import com.craft.tmanager.repository.ProjectRepository;
 import com.craft.tmanager.repository.TaskRepository;
 import com.craft.tmanager.repository.UserRepository;
 import com.craft.tmanager.service.definition.TaskServiceDefinition;
-import com.craft.tmanager.service.implementation.UserServiceImplementation;;
 
 @Service
 public class TaskServiceImplementation implements TaskServiceDefinition{
@@ -127,8 +125,8 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
         task.setPriority(taskDTO.getPriority());
         task.setDeadline(taskDTO.getDeadline());
         task.setLastUpdatedOn(taskDTO.getLastUpdatedOn());
-        task.setProjectId(projectRepository.getById(taskDTO.getProjectId()));
-        task.setAssignedUserId(userRepository.getById(taskDTO.getAssignedUserId()));
+        task.setProjectId(projectRepository.findByProjectId(taskDTO.getProjectId()).get());
+        task.setAssignedUserId(userRepository.findById(taskDTO.getAssignedUserId()).get());
         return task;
     }
 
