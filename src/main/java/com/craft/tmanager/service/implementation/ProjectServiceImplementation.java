@@ -3,7 +3,6 @@ package com.craft.tmanager.service.implementation;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +39,7 @@ public class ProjectServiceImplementation implements ProjectServiceDefinition{
         Project createdProject = projectRepository.save(project);
         
         // Convert created Project entity back to ProjectDTO
-        return Optional.of(projectRepository.save(project))
+        return Optional.of(projectRepository.save(createdProject))
                         .map(this::convertToDTO)
                         .orElseThrow(() -> new RuntimeException("Project creation failed"));
     }
@@ -53,7 +52,7 @@ public class ProjectServiceImplementation implements ProjectServiceDefinition{
     
     @Override
 	public List<ProjectDTO> getProjectsByManagerId(Long managerId) {
-    	return projectRepository.findByManagerId(userRepository.getById(managerId))
+    	return projectRepository.findByManagerId(userRepository.findById(managerId).get())
     	    .stream()
             .map(this::convertToDTO)
             .collect(Collectors.toList());
@@ -68,7 +67,7 @@ public class ProjectServiceImplementation implements ProjectServiceDefinition{
         Project updatedProject = projectRepository.save(project);
         
         // Convert updated Project entity back to ProjectDTO
-        return Optional.of(projectRepository.save(project))
+        return Optional.of(projectRepository.save(updatedProject))
                         .map(this::convertToDTO)
                         .orElseThrow(() -> new RuntimeException("Project update failed"));
     }
@@ -87,7 +86,7 @@ public class ProjectServiceImplementation implements ProjectServiceDefinition{
         project.setStartDate(projectDTO.getStartDate());
         project.setEndDate(projectDTO.getEndDate());
         project.setLastUpdatedOn(projectDTO.getLastUpdatedOn());
-        project.setManagerId(userRepository.getById(projectDTO.getManagerId()));
+        project.setManagerId(userRepository.findById(projectDTO.getManagerId()).get());
         System.out.println(project);
         return project;
     }

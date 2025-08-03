@@ -1,11 +1,8 @@
 package com.craft.tmanager.service.definition;
 
 import java.util.List;
-
 import org.springframework.stereotype.Service;
-
 import com.craft.tmanager.dto.ProjectDTO;
-import com.craft.tmanager.entity.Project;
 
 @Service
 public interface ProjectServiceDefinition {

@@ -1,11 +1,8 @@
 package com.craft.tmanager.service.definition;
 
 import java.util.List;
-
 import org.springframework.stereotype.Service;
-
 import com.craft.tmanager.dto.UserDTO;
-import com.craft.tmanager.entity.User;
 import com.craft.tmanager.entity.UserRole;
 
 

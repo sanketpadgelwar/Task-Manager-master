@@ -1,8 +1,7 @@
 package com.craft.tmanager.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
 
-public class SecurityConfig  extends WebSecurityConfigurerAdapter {
+public class SecurityConfig {
     // @Autowired
     // private UserDetailsService userDetailsService;
 
