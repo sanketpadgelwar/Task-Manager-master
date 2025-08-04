@@ -17,6 +17,8 @@ import com.craft.tmanager.dto.UserDTO;
 import com.craft.tmanager.entity.UserRole;
 import com.craft.tmanager.service.definition.UserServiceDefinition;
 
+import jakarta.validation.Valid;
+
 //@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/users")
@@ -31,7 +33,7 @@ public class UserController {
     }
     
     @PostMapping("/register")
-    public ResponseEntity<UserDTO> registerUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<UserDTO> registerUser(@Valid @RequestBody UserDTO userDTO) {
         UserDTO registeredUser = userService.registerUser(userDTO);
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
@@ -56,7 +58,7 @@ public class UserController {
     }
     
     @PutMapping("/{userId}")
-    public UserDTO updateUser(@PathVariable Long userId, @RequestBody UserDTO updatedUserDTO) {
+    public UserDTO updateUser(@PathVariable Long userId, @Valid @RequestBody UserDTO updatedUserDTO) {
         return userService.updateUser(userId, updatedUserDTO);
     }
 

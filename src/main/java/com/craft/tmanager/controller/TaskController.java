@@ -17,6 +17,8 @@ import com.craft.tmanager.dto.UserDTO;
 import com.craft.tmanager.exception.InvalidTaskDeadlineException;
 import com.craft.tmanager.service.definition.TaskServiceDefinition;
 
+import jakarta.validation.Valid;
+
 //@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/tasks")
@@ -33,7 +35,7 @@ public class TaskController {
 	}
 	 
     @PostMapping("/create")
-    public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO taskDTO) throws InvalidTaskDeadlineException {
+    public ResponseEntity<TaskDTO> createTask(@Valid @RequestBody TaskDTO taskDTO) throws InvalidTaskDeadlineException {
 //    	System.out.println(taskDTO);
     	TaskDTO createdTask = taskService.createTask(taskDTO);
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
@@ -46,7 +48,7 @@ public class TaskController {
     }
 
     @PutMapping("/{taskId}")
-    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long taskId, @RequestBody TaskDTO taskDTO) throws InvalidTaskDeadlineException {
+    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long taskId, @Valid @RequestBody TaskDTO taskDTO) throws InvalidTaskDeadlineException {
         TaskDTO updatedTask = taskService.updateTask(taskId, taskDTO);
         return ResponseEntity.ok(updatedTask);
     }

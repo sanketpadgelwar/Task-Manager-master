@@ -1,40 +1,54 @@
 package com.craft.tmanager.configuration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
 
-
+@Configuration
+@EnableWebSecurity
 public class SecurityConfig {
-    // @Autowired
-    // private UserDetailsService userDetailsService;
 
-    // @Autowired
-    // private JwtRequestFilter jwtRequestFilter;
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable()) // disable CSRF for now
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/public/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form.permitAll()); // enable form login
 
-    // @Autowired
-    // public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-    //     auth.userDetailsService(userDetailsService);
-    // }
+        return http.build();
+    }
 
-    // @Bean
-    // public PasswordEncoder passwordEncoder() {
-    //     return new BCryptPasswordEncoder();
-    // }
+    // 2️⃣ Replacing inMemoryAuthentication
+    @Bean
+    public UserDetailsService userDetailsService() {
+        var admin = User.withUsername("admin")
+                .password(passwordEncoder().encode("admin123"))
+                .roles("ADMIN")
+                .build();
 
-    // @Override
-    // protected void configure(HttpSecurity http) throws Exception {
-    //     http.csrf().disable()
-    //             .authorizeRequests()
-    //             .anyRequest().permitAll()
-    //             .and().sessionManagement()
-    //             .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-    //     http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-    // }
-    // @Override
-    // protected void configure(HttpSecurity http) throws Exception {
-    //     http.csrf().disable()
-    //             .authorizeRequests().antMatchers("/authenticate", "/register").permitAll()
-    //             .anyRequest().authenticated()
-    //             .and().sessionManagement()
-    //             .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-    //     http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-    // }
+        var user = User.withUsername("user")
+                .password(passwordEncoder().encode("user123"))
+                .roles("USER")
+                .build();
 
+        return new InMemoryUserDetailsManager(admin, user);
+    }
+
+    // 3️⃣ Password encoder bean (BCrypt is recommended)
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }
+

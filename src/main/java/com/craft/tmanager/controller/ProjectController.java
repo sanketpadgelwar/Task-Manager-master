@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.craft.tmanager.dto.ProjectDTO;
 import com.craft.tmanager.service.definition.ProjectServiceDefinition;
 
+import jakarta.validation.Valid;
+
 //@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/projects")
@@ -30,7 +32,7 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
     @PostMapping("/create")
-    public ResponseEntity<ProjectDTO> createProject(@RequestBody ProjectDTO projectDTO) {
+    public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody ProjectDTO projectDTO) {
     	System.out.println(projectDTO);
         ProjectDTO createdProject = projectService.createProject(projectDTO);
         return new ResponseEntity<>(createdProject, HttpStatus.CREATED);
@@ -49,7 +51,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{projectId}")
-    public ResponseEntity<ProjectDTO> updateProject(@PathVariable Long projectId, @RequestBody ProjectDTO projectDTO) {
+    public ResponseEntity<ProjectDTO> updateProject(@PathVariable Long projectId, @Valid @RequestBody ProjectDTO projectDTO) {
         ProjectDTO updatedProject = projectService.updateProject(projectId, projectDTO);
         return ResponseEntity.ok(updatedProject);
     }
