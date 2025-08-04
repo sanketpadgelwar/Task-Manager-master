@@ -4,6 +4,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,7 +16,9 @@ import com.craft.tmanager.entity.UserRole;
 import com.craft.tmanager.exception.UserNotFoundException;
 import com.craft.tmanager.repository.UserRepository;
 import com.craft.tmanager.service.definition.UserServiceDefinition;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class UserServiceImplementation implements UserServiceDefinition {
 
@@ -28,6 +32,7 @@ public class UserServiceImplementation implements UserServiceDefinition {
         return userRepository.getAllUsers()
                 .stream()
                 .map(this::convertToDTO)
+                .peek(user -> log.info("User '{}' fetched by '{}'", user.getUsername(), getCurrentUser()))
                 .collect(Collectors.toList());
     }
 
@@ -36,35 +41,58 @@ public class UserServiceImplementation implements UserServiceDefinition {
     }
 
     @Override
-    public UserDTO registerUser(UserDTO userDTO) {
-        User user = convertToEntity(userDTO);
-        user.setPassword(encodePassword(userDTO.getPassword()));
-        return Optional.of(userRepository.save(user))
-                        .map(this::convertToDTO)
-                        .orElseThrow(() -> new RuntimeException("User registration failed"));
-    }
+public UserDTO registerUser(UserDTO userDTO) {
+    User user = convertToEntity(userDTO);
+    user.setPassword(encodePassword(userDTO.getPassword()));
+
+    return Optional.of(userRepository.save(user))
+            .map(savedUser -> {
+                // ✅ Log inside the map after successful save
+                log.info("User '{}' registered successfully by '{}'",
+                         savedUser.getUsername(), getCurrentUser());
+                return convertToDTO(savedUser);
+            })
+            .orElseThrow(() -> new RuntimeException("User registration failed"));
+}
 
     @Override
     public UserDTO getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .map(this::convertToDTO)
-                .orElseThrow(() -> new UserNotFoundException(username));
+        .map(user -> {
+            log.info("User '{}' fetched by '{}'", username, getCurrentUser());
+            return convertToDTO(user);
+        })
+        .orElseThrow(() -> {
+            log.error("User '{}' not found. Requested by '{}'", username, getCurrentUser());
+            return new UserNotFoundException(username);
+        });
     }
 
     @Override
     public UserDTO getUserById(Long id) {
         return userRepository.findById(id)
-                .map(this::convertToDTO)
-                .orElseThrow(() -> new UserNotFoundException(id.toString()));
+        .map(user -> {
+            log.info("User with ID '{}' fetched by '{}'", id, getCurrentUser());
+            return convertToDTO(user);
+        })
+        .orElseThrow(() -> {
+            log.error("User with ID '{}' not found. Requested by '{}'", id, getCurrentUser());
+            return new UserNotFoundException(id.toString());
+        });            
     }
 
     @Override
     public List<UserDTO> getUsersByRole(UserRole role) {
         return Optional.ofNullable(userRepository.findByRole(role))
-                        .orElseThrow(() -> new UserNotFoundException("No users found with role: " + role))
-                        .stream()
-                        .map(this::convertToDTO)
-                        .collect(Collectors.toList());
+        .orElseThrow(() -> {
+            log.error("No users found with role '{}' requested by '{}'", role, getCurrentUser());
+            return new UserNotFoundException("No users found with role: " + role);
+        })
+        .stream()
+        .map(this::convertToDTO)
+        .peek(user -> log.info("User '{}' with role '{}' fetched by '{}'",
+                user.getUsername(), role, getCurrentUser()))
+        .collect(Collectors.toList());
     }
 
     @Override
@@ -75,18 +103,31 @@ public class UserServiceImplementation implements UserServiceDefinition {
                     user.setEmail(updatedUserDTO.getEmail());
                     user.setRole(updatedUserDTO.getRole());
                     user.setPassword(encodePassword(updatedUserDTO.getPassword()));
-                    return convertToDTO(userRepository.save(user));
+
+                    User updatedUser = userRepository.save(user);
+                    log.info("User with ID '{}' updated successfully by '{}'",
+                            userId, getCurrentUser());
+
+                    return convertToDTO(updatedUser);
                 })
-                .orElseThrow(() -> new UserNotFoundException(userId.toString()));
+                .orElseThrow(() -> {
+                    log.error("Update failed: User with ID '{}' not found. Requested by '{}'",
+                            userId, getCurrentUser());
+                    return new UserNotFoundException(userId.toString());
+                });
     }
 
     @Override
     public void deleteUser(Long userId) {
         userRepository.findById(userId)
-                .ifPresentOrElse(
-                        user -> userRepository.deleteById(userId),
-                        () -> { throw new UserNotFoundException(userId.toString()); }
-                );
+                .ifPresentOrElse(user -> {
+                    userRepository.deleteById(userId);
+                    log.warn("User with ID '{}' deleted by '{}'", userId, getCurrentUser());
+                }, () -> {
+                    log.error("Delete failed: User with ID '{}' not found. Requested by '{}'",
+                            userId, getCurrentUser());
+                    throw new UserNotFoundException(userId.toString());
+                });
     }
 
     // Helper: Convert DTO -> Entity
@@ -110,5 +151,14 @@ public class UserServiceImplementation implements UserServiceDefinition {
         return userDTO;
     }
 
+    private String getCurrentUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication == null || !authentication.isAuthenticated()) {
+        return "SYSTEM"; // Default if no user is logged in
+    }
+
+    return authentication.getName(); // Returns the username of the logged-in user
+    }
 	
 }

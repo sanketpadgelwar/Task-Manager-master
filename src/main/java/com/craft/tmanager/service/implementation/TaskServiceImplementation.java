@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.craft.tmanager.dto.TaskDTO;
@@ -20,7 +22,9 @@ import com.craft.tmanager.repository.ProjectRepository;
 import com.craft.tmanager.repository.TaskRepository;
 import com.craft.tmanager.repository.UserRepository;
 import com.craft.tmanager.service.definition.TaskServiceDefinition;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class TaskServiceImplementation implements TaskServiceDefinition{
     @Autowired
@@ -36,6 +40,8 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
         return taskRepository.findByProjectId(projectRepository.findById(projectId))
                 .stream()
                 .map(this::convertToDTO)
+                .peek(task -> log.info("Task '{}' for project '{}' fetched by '{}'",
+                        task.getTaskName(), projectId, getCurrentUser()))
                 .collect(Collectors.toList());
     }
     
@@ -43,76 +49,119 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
         return taskRepository.findAll()
                 .stream()
                 .map(this::convertToDTO)
+                .peek(task -> log.info("Task '{}' fetched by '{}'", task.getTaskName(), getCurrentUser()))
                 .collect(Collectors.toList());
     }
     
     public TaskDTO createTask(TaskDTO taskDTO) throws InvalidTaskDeadlineException {
 
-    	 LocalDate currentDateTime = LocalDate.now();
-         if (!taskDTO.getDeadline().isAfter(currentDateTime)) {
-             throw new InvalidTaskDeadlineException("Deadline must be a future date");
-         }
-        // Convert TaskDTO to Task entity
-         
+        LocalDate currentDate = LocalDate.now();
+        if (!taskDTO.getDeadline().isAfter(currentDate)) {
+            log.error("Task creation failed: Deadline '{}' is not in future. Requested by '{}'",
+                    taskDTO.getDeadline(), getCurrentUser());
+            throw new InvalidTaskDeadlineException("Deadline must be a future date");
+        }
+
         Task task = convertToEntity(taskDTO);
         task.setLastUpdatedOn(LocalDateTime.now());
-        
+
         return Optional.of(taskRepository.save(task))
-                        .map(this::convertToDTO)
-                        .orElseThrow(() -> new RuntimeException("Task creation failed"));
+                .map(savedTask -> {
+                    log.info("Task '{}' created successfully by '{}'",
+                            savedTask.getTaskName(), getCurrentUser());
+                    return convertToDTO(savedTask);
+                })
+                .orElseThrow(() -> {
+                    log.error("Task creation failed for '{}' by '{}'",
+                            taskDTO.getTaskName(), getCurrentUser());
+                    return new RuntimeException("Task creation failed");
+                });
     }
 
     public TaskDTO getTaskById(Long taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new TaskNotFoundException(taskId));
-        return convertToDTO(task);
+        return taskRepository.findById(taskId)
+                .map(task -> {
+                    log.info("Task with ID '{}' fetched by '{}'", taskId, getCurrentUser());
+                    return convertToDTO(task);
+                })
+                .orElseThrow(() -> {
+                    log.error("Task with ID '{}' not found. Requested by '{}'", taskId, getCurrentUser());
+                    return new TaskNotFoundException(taskId);
+                });
     }
 
     public TaskDTO updateTask(Long taskId, TaskDTO taskDTO) throws InvalidTaskDeadlineException {
-    	LocalDate currentDateTime = LocalDate.now();
-        if (!taskDTO.getDeadline().isAfter(currentDateTime)) {
+    	LocalDate currentDate = LocalDate.now();
+        if (!taskDTO.getDeadline().isAfter(currentDate)) {
+            log.error("Task update failed: Deadline '{}' is not in future. Requested by '{}'",
+                    taskDTO.getDeadline(), getCurrentUser());
             throw new InvalidTaskDeadlineException("Deadline must be a future date");
         }
-        // Convert TaskDTO to Task entity
+
         Task task = convertToEntity(taskDTO);
         task.setTaskId(taskId);
-        
+        task.setLastUpdatedOn(LocalDateTime.now());
+
         return Optional.of(taskRepository.save(task))
-                        .map(this::convertToDTO)
-                        .orElseThrow(() -> new RuntimeException("Task update failed"));
+                .map(updatedTask -> {
+                    log.info("Task with ID '{}' updated successfully by '{}'", taskId, getCurrentUser());
+                    return convertToDTO(updatedTask);
+                })
+                .orElseThrow(() -> {
+                    log.error("Task update failed for ID '{}' by '{}'", taskId, getCurrentUser());
+                    return new RuntimeException("Task update failed");
+                });
     }
 
     public void deleteTask(Long taskId) {
        taskRepository.findById(taskId)
-                        .ifPresentOrElse(task -> taskRepository.deleteById(taskId), () -> {throw new TaskNotFoundException(taskId);}
-                        );
+                .ifPresentOrElse(task -> {
+                    taskRepository.deleteById(taskId);
+                    log.warn("Task '{}' with ID '{}' deleted by '{}'",
+                            task.getTaskName(), taskId, getCurrentUser());
+                }, () -> {
+                    log.error("Delete failed: Task with ID '{}' not found. Requested by '{}'",
+                            taskId, getCurrentUser());
+                    throw new TaskNotFoundException(taskId);
+                });
     }
     
     public List<TaskDTO> getLastUpdatedTasks() {
         return taskRepository.findAllOrderByLastUpdatedOnDesc()
-                             .stream()
-                             .map(this::convertToDTO)
-                             .collect(Collectors.toList());
+                .stream()
+                .map(this::convertToDTO)
+                .peek(task -> log.info("Task '{}' last updated on '{}' fetched by '{}'",
+                        task.getTaskName(), task.getLastUpdatedOn(), getCurrentUser()))
+                .collect(Collectors.toList());
     }
     
  
 	@Override
 	public List<UserDTO> getEmployeesByProject(Long projectId) {
         return taskRepository.findByProjectId(projectRepository.findById(projectId))
-                .stream()
-                .map(Task::getAssignedUserId)
-                .distinct()
-                .map(new UserServiceImplementation()::convertToDTO)
-                .collect(Collectors.toList());
-	}
+        .stream()
+        .map(Task::getAssignedUserId)
+        .distinct()
+        .map(new UserServiceImplementation()::convertToDTO) // Consider refactoring to avoid `new` service call
+        .peek(user -> log.info("Employee '{}' fetched for project '{}' by '{}'",
+                user.getUsername(), projectId, getCurrentUser()))
+        .collect(Collectors.toList());
+    }
 
     public List<TaskDTO> getTasksByEmployee(Long employeeId) {
         Optional<User> user = userRepository.findById(employeeId);
-        if(user == null) throw new UserNotFoundException("Employee with id "+employeeId+" not found");
+        if (user.isEmpty()) {
+            log.error("Employee with ID '{}' not found. Requested by '{}'",
+                    employeeId, getCurrentUser());
+            throw new UserNotFoundException("Employee with id " + employeeId + " not found");
+        }
+
         return taskRepository.findByAssignedUserId(user.get())
-        .stream()
-        .map(this::convertToDTO)
-        .collect(Collectors.toList());
+                .stream()
+                .map(this::convertToDTO)
+                .peek(task -> log.info("Task '{}' assigned to employee '{}' fetched by '{}'",
+                        task.getTaskName(), employeeId, getCurrentUser()))
+                .collect(Collectors.toList());
     }
 
 
@@ -145,7 +194,13 @@ public class TaskServiceImplementation implements TaskServiceDefinition{
         return taskDTO;
     }
 
-    
+    private String getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "SYSTEM"; // Default for unauthenticated calls
+        }
+        return authentication.getName();
+    }
     
     
 }
