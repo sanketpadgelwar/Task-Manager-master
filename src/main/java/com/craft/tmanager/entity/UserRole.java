@@ -1,6 +1,6 @@
 package com.craft.tmanager.entity;
 
 public enum UserRole {
-    ADMIN, PROJECT_MANAGER, TASK_ASSIGNEE
+    ROLE_ADMIN, ROLE_PROJECT_MANAGER, ROLE_TASK_ASSIGNEE
 }
 	
