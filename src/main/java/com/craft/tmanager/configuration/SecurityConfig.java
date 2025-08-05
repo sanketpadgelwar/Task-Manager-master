@@ -20,9 +20,9 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // disable CSRF for now
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/public/**").permitAll()
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                .requestMatchers("/api/projects/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/api/tasks/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form.permitAll()); // enable form login

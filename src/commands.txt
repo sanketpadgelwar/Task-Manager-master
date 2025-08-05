@@ -1,2 +1,3 @@
 project maven -> cd D:\Workspace\T-M\Task-Manager-master
 maven install -> .\mvnw clean install
+Dependency Management -> .\mvnw versions:display-dependency-updates
