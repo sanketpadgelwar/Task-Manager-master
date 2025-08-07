@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/tasks/**").permitAll()
                 .anyRequest().authenticated()
             )
-            .formLogin(form -> form.permitAll());
+            .formLogin().disable();
 
         return http.build();
     }
