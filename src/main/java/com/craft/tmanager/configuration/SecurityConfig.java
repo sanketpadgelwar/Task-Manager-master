@@ -39,7 +39,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/projects/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/api/tasks/**","/login").permitAll()
+                .requestMatchers("/api/tasks/**","/auth/login").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin().disable();
